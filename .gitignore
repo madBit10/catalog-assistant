@@ -1,0 +1,6 @@
+.venv/
+.env
+storage/
+__pycache__/
+.DS_Store
+CHANGES_MADE.md

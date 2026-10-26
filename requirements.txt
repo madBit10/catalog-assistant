@@ -1,0 +1,29 @@
+# AI Catalog Assistant: Python dependencies (Python 3.14)
+# Install: pip install -r requirements.txt
+# Only packages the app uses directly are listed, pinned to exact versions;
+# pip resolves their sub-dependencies automatically.
+
+# Web API
+fastapi==0.162.0
+uvicorn==0.54.0
+
+# Database + migrations
+SQLAlchemy==2.1.6
+psycopg2-binary==2.9.13
+alembic==1.20.1
+
+# Job queue
+redis==8.1.0
+
+# Settings (.env)
+python-dotenv==1.2.4
+
+# AI: Claude API
+anthropic==2.3.0
+
+# Image processing
+pillow==13.0.0
+# [cpu] also installs onnxruntime, the engine that runs rembg's model.
+# Without it, rembg imports fine but fails on the first photo.
+rembg[cpu]==2.0.86
+onnxruntime==1.31.0
