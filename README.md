@@ -66,7 +66,7 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 
 - [x] System design: requirements, data model, decisions, API, test plan
 - [x] Project setup: virtual environment, Docker Compose (PostgreSQL + Redis)
-- [ ] Database models + migrations
+- [x] Database models + migrations
 - [ ] Register / login / JWT + owner-scoped access
 - [ ] Upload endpoint: file validation, idempotency, safe file storage
 - [ ] Image cleanup: background removal + white canvas
@@ -94,6 +94,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # then fill in your values
 docker compose up -d        # PostgreSQL + Redis
+alembic upgrade head        # create the database tables
 ```
 
 Full setup instructions will be added as the application is built.

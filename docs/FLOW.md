@@ -8,7 +8,7 @@ Read this before reading the code. It answers:
 Status: ✅ **exists** · 🔜 **planned** (designed in `SYSTEM_DESIGN.md`, not written yet).
 Updated with every code change. If a diagram and the code disagree, the code wins and this file gets fixed.
 
-*Last updated: 2026-10-26: setup only (venv, docker-compose, design docs, README, .env.example). No application code yet.*
+*Last updated: 2026-10-29: config, DB connection, `Base`, all three models and the first Alembic migration exist; tables are live in PostgreSQL. Auth next.*
 
 ---
 
@@ -35,7 +35,7 @@ flowchart LR
         SAVE["save result<br/>skip edited_fields"]
     end
 
-    DB[("PostgreSQL ✅ container<br/>users · batches · items 🔜")]
+    DB[("PostgreSQL ✅ container<br/>users · batches · items ✅ (Alembic)")]
     Q[("Redis ✅ container<br/>queue + processing list 🔜")]
     FS[("storage/ 🔜<br/>originals · clean")]
     CL[("Claude API<br/>claude-haiku-5-5")]
@@ -110,11 +110,22 @@ sequenceDiagram
 
 ---
 
+## 2.4 Startup: how settings and the database connection load ✅
+```mermaid
+flowchart LR
+    ENV[".env"] -->|read + type-checked| CFG["app/core/config.py<br/>settings = Settings()<br/>(app refuses to start if a value is missing/wrong)"]
+    CFG -->|settings.database_url| DBF["app/db/database.py<br/>engine (pool_pre_ping) · SessionLocal · get_db()"]
+    BASE["app/db/base.py<br/>class Base(DeclarativeBase)"] --> MOD["app/db/models.py ✅<br/>User · Batch · Item"]
+    DBF -->|get_db() per request| ROUTES["API routes 🔜"]
+    MOD -.->|Base.metadata| ALE["alembic/env.py ✅<br/>imports models · URL from settings"]
+```
+`base.py` imports nothing from the app, so models never open a DB connection just by being imported.
+
 ## 3. Data map: who writes, who reads
 
 | Location | Written by | Read by | In git? |
 |---|---|---|---|
-| `.env` | you, by hand | config 🔜, docker-compose ✅ | ❌ never |
+| `.env` | you, by hand | `app/core/config.py` ✅ (pydantic-settings validates it at startup), docker-compose ✅ | ❌ never |
 | `.env.example` | Claude (placeholders only) ✅ | new developers, as a template | ✅ |
 | `README.md` | Claude ✅, updated as features land | GitHub visitors, recruiters | ✅ |
 | `requirements.txt` | updated whenever a package is added ✅ | `pip install -r`, CI, deployment | ✅ |
@@ -124,6 +135,7 @@ sequenceDiagram
 | Redis queue | `POST /batches`, `/retry` 🔜 | worker 🔜 | ❌ |
 | `storage/originals/` | `POST /batches` 🔜 | worker 🔜, image route 🔜 | ❌ |
 | `storage/clean/` | worker 🔜 | image route, zip export 🔜 | ❌ |
+| `alembic/versions/*.py` | `alembic revision --autogenerate`, then reviewed by hand ✅ | `alembic upgrade head` → creates/changes tables | ✅ |
 | `docs/SYSTEM_DESIGN.md` | design sessions ✅ | you, interviewers | ✅ |
 | `docs/FLOW.md` | updated with every code change ✅ | you, before reading code | ✅ |
 | `docs/CHANGES_MADE.md` | every change Claude makes ✅ | you | your choice |
