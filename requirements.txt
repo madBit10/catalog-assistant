@@ -16,7 +16,16 @@ alembic==1.20.1
 redis==8.1.0
 
 # Settings (.env)
+# pydantic-settings loads .env into a typed Settings class: a missing or
+# wrongly typed setting fails loudly at startup, not halfway through a request.
+pydantic-settings==2.16.1
+# python-dotenv is what pydantic-settings uses to read the .env file itself.
 python-dotenv==1.2.4
+
+# Auth: one-way, salted password hashing. bcrypt only accepts passwords up to
+# 72 bytes (5.x raises ValueError beyond that), so the signup schema must
+# reject longer passwords before they reach it.
+bcrypt==5.0.0
 
 # AI: Claude API
 anthropic==2.3.0

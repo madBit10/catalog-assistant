@@ -190,6 +190,7 @@ Tests are written as **real-user scenarios**, run against **real bad files** in 
 | Accounts | Changes the ID in the URL to see another shop | Owner filter → 404 | `test_user_cannot_see_another_users_batch` |
 | | Wrong password | 401, generic message | `test_wrong_password_gives_generic_error` |
 | | Tab left open overnight | Token expiry → 401 | `test_expired_token_is_rejected` |
+| | Picks a very long passphrase (password manager) | bcrypt accepts max 72 bytes (5.x raises) → signup schema allows 8–72 bytes, clear 422 | `test_overlong_password_is_rejected_cleanly` |
 | Upload | PDF renamed to `.jpg` | Check real contents; reject that file, keep the rest | `test_fake_jpg_is_rejected_but_rest_of_batch_continues` |
 | | 25 MB, 8000 px phone photo | Size limit + downscale | `test_huge_photo_is_downscaled_not_crashed` |
 | | iPhone HEIC photo | Clear "export as JPEG" message | `test_heic_photo_gets_clear_message` |
