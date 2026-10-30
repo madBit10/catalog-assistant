@@ -8,7 +8,7 @@ Read this before reading the code. It answers:
 Status: ✅ **exists** · 🔜 **planned** (designed in `SYSTEM_DESIGN.md`, not written yet).
 Updated with every code change. If a diagram and the code disagree, the code wins and this file gets fixed.
 
-*Last updated: 2026-10-29: config, DB connection, `Base`, all three models and the first Alembic migration exist; tables are live in PostgreSQL. Auth next.*
+*Last updated: 2026-10-29: models + migration live; auth built (`/auth/register`, `/auth/login`, `/auth/me`, `get_current_user`, ownership helpers), 15 tests passing. Upload next.*
 
 ---
 
@@ -110,6 +110,19 @@ sequenceDiagram
 
 ---
 
+## 2.5 Auth ✅ (`app/api/routes/auth.py`)
+
+```mermaid
+flowchart TD
+    R["POST /auth/register"] --> RS["RegisterRequest<br/>email lowercased · password 8-72 bytes"] -->|422 if invalid| RH["hash_password()"] --> RC["INSERT users"] -->|unique email clash| R409["409"]
+    RC --> R201["201 UserOut (no hash)"]
+    L["POST /auth/login (form: username=email)"] --> LQ["SELECT user by email"] --> LC["check_password()<br/>dummy hash if no user"] -->|bad| L401["401 same message"]
+    LC -->|ok| LT["create_access_token(user.id)<br/>sub + exp, HS256"] --> L200["200 {access_token}"]
+    P["Any protected route"] --> D["get_current_user<br/>decode_access_token()"] -->|expired/forged/missing| P401["401"]
+    D --> DU["db.get(User)"] -->|account deleted| P401
+    DU --> OK["route runs with current_user"] --> OWN["get_batch_for_user / get_item_for_user<br/>None → 404"]
+```
+
 ## 2.4 Startup: how settings and the database connection load ✅
 ```mermaid
 flowchart LR
@@ -129,7 +142,7 @@ flowchart LR
 | `.env.example` | Claude (placeholders only) ✅ | new developers, as a template | ✅ |
 | `README.md` | Claude ✅, updated as features land | GitHub visitors, recruiters | ✅ |
 | `requirements.txt` | updated whenever a package is added ✅ | `pip install -r`, CI, deployment | ✅ |
-| PostgreSQL `users` | `POST /auth/register` 🔜 | login, `get_current_user` 🔜 | ❌ |
+| PostgreSQL `users` | `POST /auth/register` ✅ | login, `get_current_user` ✅ | ❌ |
 | PostgreSQL `batches` | `POST /batches` 🔜 | batch routes, quota check 🔜 | ❌ |
 | PostgreSQL `items` | `POST /batches`, worker, `PATCH /items` 🔜 | everything 🔜 | ❌ |
 | Redis queue | `POST /batches`, `/retry` 🔜 | worker 🔜 | ❌ |
