@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -9,7 +10,10 @@ class Settings(BaseSettings):
 
     database_url: str
     redis_url: str
-    jwt_secret: str
+    # Signs every login token. An empty or short secret lets anyone forge a
+    # token, so the app refuses to start without 32+ characters.
+    jwt_secret: str = Field(min_length=32)
+    jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
 settings = Settings()

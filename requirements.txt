@@ -26,6 +26,12 @@ python-dotenv==1.2.4
 # 72 bytes (5.x raises ValueError beyond that), so the signup schema must
 # reject longer passwords before they reach it.
 bcrypt==5.0.0
+# Signs and verifies login tokens (JWT)
+PyJWT==2.15.1
+# FastAPI needs it to read the login form (OAuth2PasswordRequestForm)
+python-multipart==0.0.32
+# Lets Pydantic's EmailStr reject invalid emails at signup
+email-validator==2.3.0
 
 # AI: Claude API
 anthropic==2.3.0
@@ -36,3 +42,7 @@ pillow==13.0.0
 # Without it, rembg imports fine but fails on the first photo.
 rembg[cpu]==2.0.86
 onnxruntime==1.31.0
+
+# Tests (httpx powers FastAPI's TestClient)
+pytest==9.2.0
+httpx==0.28.1

@@ -67,7 +67,7 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 - [x] System design: requirements, data model, decisions, API, test plan
 - [x] Project setup: virtual environment, Docker Compose (PostgreSQL + Redis)
 - [x] Database models + migrations
-- [ ] Register / login / JWT + owner-scoped access
+- [x] Register / login / JWT + owner-scoped access
 - [ ] Upload endpoint: file validation, idempotency, safe file storage
 - [ ] Image cleanup: background removal + white canvas
 - [ ] Claude structured-output call
