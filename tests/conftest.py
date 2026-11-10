@@ -1,5 +1,8 @@
 import os
+import shutil
+import tempfile
 
+import redis
 from dotenv import dotenv_values
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
@@ -18,6 +21,9 @@ os.environ["DATABASE_URL"] = _test_url.render_as_string(hide_password=False)
 # A fake signing secret just for tests (32+ chars so config accepts it);
 # tests never need or see your real JWT_SECRET
 os.environ["JWT_SECRET"] = "test-secret-" + "x" * 32
+# Concept: TEMP FOLDER. Uploaded test photos go to a throwaway folder,
+# never your real storage/. Set BEFORE the app import, like DATABASE_URL.
+os.environ["STORAGE_DIR"] = tempfile.mkdtemp(prefix="catalog-test-")
 
 # `# noqa: E402` tells the linter "yes, these imports are below code on
 # purpose" (they must come after the environment variables above).
@@ -32,6 +38,7 @@ from app.main import app  # noqa: E402
 # would overwrite the name `app` (the FastAPI app above) with the app PACKAGE,
 # and every TestClient(app) would crash. F401 = "imported but unused" is fine.
 import app.db.models as _models  # noqa: E402,F401
+from app.services.queue import get_queue  # noqa: E402
 
 
 def _create_test_database_if_missing():
@@ -60,6 +67,38 @@ def clean_tables():
     yield
     with engine.begin() as conn:
         conn.execute(text("TRUNCATE users, batches, items CASCADE"))
+
+
+class FakeQueue:
+    """Why: tests must not need Redis, and must SEE what was queued.
+    Example: upload 2 photos -> fake.pushed == [[id1, id2]]
+    Set fail=True to act like Redis is down."""
+
+    def __init__(self):
+        self.pushed: list[list] = []
+        self.fail = False
+
+    def push(self, item_ids):
+        if self.fail:
+            raise redis.ConnectionError("Redis is down (simulated)")
+        self.pushed.append(list(item_ids))
+
+
+# Concept: DEPENDENCY OVERRIDE. Every route that asks for get_queue()
+# gets this fake instead. autouse=True: no test can hit real Redis by mistake.
+@pytest.fixture(autouse=True)
+def fake_queue():
+    fake = FakeQueue()
+    app.dependency_overrides[get_queue] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_queue, None)
+
+
+@pytest.fixture(autouse=True)
+def clean_storage():
+    """Why: tests count files on disk, so each test starts with an empty folder."""
+    yield
+    shutil.rmtree(os.environ["STORAGE_DIR"], ignore_errors=True)
 
 
 @pytest.fixture
