@@ -8,7 +8,7 @@ Read this before reading the code. It answers:
 Status: ✅ **exists** · 🔜 **planned** (designed in `SYSTEM_DESIGN.md`, not written yet).
 Updated with every code change. If a diagram and the code disagree, the code wins and this file gets fixed.
 
-*Last updated: 2026-10-29: models + migration live; auth built (`/auth/register`, `/auth/login`, `/auth/me`, `get_current_user`, ownership helpers), 15 tests passing. Upload next.*
+*Last updated: 2026-11-09: auth ✅; upload in progress: `services/images.py` (validate_image) ✅ and `services/storage.py` ✅, `services/queue.py` ✅, `schemas/batches.py` ✅, upload endpoint ✅ (`routes/batches.py`, services images/storage/queue), 39 tests passing. Worker in progress: `services/cleanup.py` ✅, queue `claim/ack/recover_orphans` ✅. 24 tests passing.*
 
 ---
 
@@ -123,6 +123,25 @@ flowchart TD
     DU --> OK["route runs with current_user"] --> OWN["get_batch_for_user / get_item_for_user<br/>None → 404"]
 ```
 
+## 2.6 Upload ✅ (14 tests) (`app/api/routes/batches.py`)
+
+```mermaid
+flowchart TD
+    U["POST /batches<br/>files + Idempotency-Key"] --> K{"key seen before?<br/>_existing_batch()"}
+    K -->|yes| R200["200 same batch"]
+    K -->|no| C{"1-50 files?"} -->|no| E422a["422"]
+    C -->|yes| L["for each file:<br/>capped read → validate_image() → save_original()"]
+    L -->|bad file| REJ["rejected[] (reason)"]
+    L --> S{"any saved?"} -->|no| E422b["422 + reasons"]
+    S -->|yes| TX["one transaction:<br/>INSERT batch + items (queued)"]
+    TX -->|unique key clash| R200
+    TX -->|other error| DEL["delete_files() → 500"]
+    TX -->|commit| Q["queue.push(item ids)<br/>Redis down → log, sweep later"] --> R201["201 batch + rejected"]
+    G1["GET /batches"] --> P1["my batches + _progress() (1 query)"]
+    G2["GET /batches/{id}"] --> O["get_batch_for_user()"] -->|None| N404["404"]
+    O --> P2["_batch_out()"]
+```
+
 ## 2.4 Startup: how settings and the database connection load ✅
 ```mermaid
 flowchart LR
@@ -143,10 +162,10 @@ flowchart LR
 | `README.md` | Claude ✅, updated as features land | GitHub visitors, recruiters | ✅ |
 | `requirements.txt` | updated whenever a package is added ✅ | `pip install -r`, CI, deployment | ✅ |
 | PostgreSQL `users` | `POST /auth/register` ✅ | login, `get_current_user` ✅ | ❌ |
-| PostgreSQL `batches` | `POST /batches` 🔜 | batch routes, quota check 🔜 | ❌ |
-| PostgreSQL `items` | `POST /batches`, worker, `PATCH /items` 🔜 | everything 🔜 | ❌ |
-| Redis queue | `POST /batches`, `/retry` 🔜 | worker 🔜 | ❌ |
-| `storage/originals/` | `POST /batches` 🔜 | worker 🔜, image route 🔜 | ❌ |
+| PostgreSQL `batches` | `POST /batches` ✅ | `GET /batches`, `GET /batches/{id}` ✅, quota 🔜 | ❌ |
+| PostgreSQL `items` | `POST /batches` ✅, worker 🔜, `PATCH /items` 🔜 | `GET /batches/{id}` ✅, worker 🔜 | ❌ |
+| Redis queue `catalog:queue` | `POST /batches`, `/retry` 🔜 via `JobQueue.push()` ✅ (IDs only, LPUSH) | worker 🔜 (BLMOVE right → FIFO) | ❌ |
+| `storage/originals/` | `POST /batches` 🔜 via `save_original()` ✅ (random name, temp+rename) | worker 🔜, image route 🔜 | ❌ |
 | `storage/clean/` | worker 🔜 | image route, zip export 🔜 | ❌ |
 | `alembic/versions/*.py` | `alembic revision --autogenerate`, then reviewed by hand ✅ | `alembic upgrade head` → creates/changes tables | ✅ |
 | `docs/SYSTEM_DESIGN.md` | design sessions ✅ | you, interviewers | ✅ |

@@ -16,4 +16,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
+    # Uploads
+    storage_dir: str = "storage"          # originals/ and clean/ live under here
+    max_files_per_batch: int = 50
+    max_file_mb: int = 15                 # a modern phone photo is 3-8 MB
+    queue_name: str = "catalog:queue"     # Redis list the worker reads from
+
 settings = Settings()

@@ -2,7 +2,7 @@
 
 > A store admin logs in, drops in a batch of product photos, and gets back, for every photo, a **clean white-background image** and **AI-written catalog data** (title, description, category, colours, tags) to review, edit and export.
 
-*Design session: 2026-10-24 · Status: design locked, build starting · Target: **Sunday 2026-11-01** · Model: `claude-haiku-5-5` (compared against `claude-opus-5-5` at the end)*
+*Design session: 2026-10-24 · Status: build in progress · Target: **Tuesday 2026-11-17** (moved from 11-01) · Model: `claude-haiku-5-5` (compared against `claude-opus-5-5` at the end)*
 
 ---
 
@@ -224,16 +224,19 @@ Tests are written as **real-user scenarios**, run against **real bad files** in 
 | Test-photo licensing | Own photos, or datasets whose licence allows it |
 | Port clash with the webhook project (5432, 6379) | Stop those containers, or remap ports |
 
-## 9. Build plan (to 2026-11-01)
-| Day | Build |
-|---|---|
-| Mon 10/26 | Database models + first Alembic migration |
-| Tue 10/27 | Register / login / JWT + `get_item_for_user` ownership helper |
-| Wed 10/28 | Upload endpoint: file validation, idempotency, random file names · image cleanup (rembg + Pillow) |
-| Thu 10/29 | Claude structured-output call · Redis queue + worker + retry policy |
-| Fri 10/30 | Real-user scenario tests (fixtures + fake Claude) · CSV + zip export |
-| Sat 10/31 | React frontend: login, upload, live progress, review + edit |
-| Sun 11/01 | Evaluation (Haiku vs Opus on 30 photos) · deploy · README + demo GIF |
+## 9. Build plan (to 2026-11-17)
+*Moved from 2026-11-01 on 2026-11-09: the original plan assumed ~30 h in 8 days; real pace was slower.*
+
+| Day | Build | Status |
+|---|---|---|
+| 10/26–10/29 | Database models + Alembic · register / login / JWT + ownership helpers | ✅ |
+| 11/09 | Upload endpoint: file validation, idempotency, random file names, queue push | ✅ |
+| Tue 11/10 – Wed 11/11 | Worker: BLMOVE crash-safe queue, rembg + Pillow (EXIF rotate, RGB, white 2048 px), retry policy, sweep | 🔜 |
+| Thu 11/12 | Claude structured-output call + fake Claude client for tests | 🔜 |
+| Fri 11/13 | `PATCH /items`, `/retry`, image route · CSV + zip export | 🔜 |
+| Sat 11/14 – Sun 11/15 | React frontend: login, upload, live progress, review + edit | 🔜 |
+| Mon 11/16 | Evaluation (Haiku vs Opus on 30 labelled photos) | 🔜 |
+| Tue 11/17 | Deploy · README + demo GIF | 🔜 |
 
 ## 10. Next steps (after v1)
 S3 storage · store integration (Shopify CSV format / API) · WebSockets for live updates · Batch API for large overnight batches · multiple images per product (side/back) · per-user brand-voice settings for descriptions.

@@ -1,6 +1,6 @@
 # AI Catalog Assistant
 
-> 🚧 **Work in progress**: design complete, build underway. Target: **November 1, 2026**.
+> 🚧 **Work in progress**: design complete, build underway. Target: **November 17, 2026**.
 
 **Upload a batch of product photos → get clean white-background images and AI-written catalog listings, ready to review and export.**
 
@@ -68,7 +68,7 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 - [x] Project setup: virtual environment, Docker Compose (PostgreSQL + Redis)
 - [x] Database models + migrations
 - [x] Register / login / JWT + owner-scoped access
-- [ ] Upload endpoint: file validation, idempotency, safe file storage
+- [x] Upload endpoint: file validation, idempotency, safe file storage
 - [ ] Image cleanup: background removal + white canvas
 - [ ] Claude structured-output call
 - [ ] Redis queue + worker + retry policy
