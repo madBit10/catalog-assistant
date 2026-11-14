@@ -69,9 +69,9 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 - [x] Database models + migrations
 - [x] Register / login / JWT + owner-scoped access
 - [x] Upload endpoint: file validation, idempotency, safe file storage
-- [ ] Image cleanup: background removal + white canvas
+- [x] Image cleanup: background removal + white canvas
 - [ ] Claude structured-output call
-- [ ] Redis queue + worker + retry policy
+- [x] Redis queue + worker + retry policy
 - [ ] Real-user scenario tests
 - [ ] GitHub Actions CI (tests on every push)
 - [ ] CSV + zip export
@@ -95,6 +95,8 @@ pip install -r requirements.txt
 cp .env.example .env        # then fill in your values
 docker compose up -d        # PostgreSQL + Redis
 alembic upgrade head        # create the database tables
+uvicorn app.main:app --reload   # API at http://127.0.0.1:8000/docs
+python -m app.worker        # in a 2nd terminal: processes uploaded photos
 ```
 
 Full setup instructions will be added as the application is built.
