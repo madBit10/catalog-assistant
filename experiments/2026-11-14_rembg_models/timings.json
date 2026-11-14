@@ -1,0 +1,29 @@
+{
+  "u2net": {
+    "load_s": 0.2,
+    "seconds_per_photo": {
+      "pencil_box": 1.27,
+      "bottle": 0.41,
+      "cable": 0.39,
+      "people": 0.62
+    }
+  },
+  "isnet-general-use": {
+    "load_s": 21.1,
+    "seconds_per_photo": {
+      "pencil_box": 2.16,
+      "bottle": 1.0,
+      "cable": 0.78,
+      "people": 0.99
+    }
+  },
+  "birefnet-general-lite": {
+    "load_s": 22.1,
+    "seconds_per_photo": {
+      "pencil_box": 7.14,
+      "bottle": 6.36,
+      "cable": 6.43,
+      "people": 6.94
+    }
+  }
+}

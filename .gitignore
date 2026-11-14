@@ -5,3 +5,7 @@ __pycache__/
 .DS_Store
 CHANGES_MADE.md
 docs/INTERVIEW_PREP.md
+
+# Experiment outputs contain personal photos: keep local, commit only scripts + results.md
+experiments/**/outputs/
+experiments/**/grid.jpg

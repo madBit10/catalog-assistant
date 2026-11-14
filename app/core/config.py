@@ -22,4 +22,9 @@ class Settings(BaseSettings):
     max_file_mb: int = 15                 # a modern phone photo is 3-8 MB
     queue_name: str = "catalog:queue"     # Redis list the worker reads from
 
+    # Background removal model (see experiments/2026-11-14_rembg_models/results.md)
+    # Concept: CONFIG OVER CODE. Switching models = edit .env, no code change.
+    # Example: REMBG_MODEL=birefnet-general-lite in .env -> cleaner, ~6x slower
+    rembg_model: str = "isnet-general-use"
+
 settings = Settings()

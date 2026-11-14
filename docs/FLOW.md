@@ -8,7 +8,7 @@ Read this before reading the code. It answers:
 Status: ✅ **exists** · 🔜 **planned** (designed in `SYSTEM_DESIGN.md`, not written yet).
 Updated with every code change. If a diagram and the code disagree, the code wins and this file gets fixed.
 
-*Last updated: 2026-11-09: auth ✅; upload in progress: `services/images.py` (validate_image) ✅ and `services/storage.py` ✅, `services/queue.py` ✅, `schemas/batches.py` ✅, upload endpoint ✅ (`routes/batches.py`, services images/storage/queue), 39 tests passing. Worker in progress: `services/cleanup.py` ✅, queue `claim/ack/recover_orphans` ✅. 24 tests passing.*
+*Last updated: 2026-11-09: auth ✅; upload in progress: `services/images.py` (validate_image) ✅ and `services/storage.py` ✅, `services/queue.py` ✅, `schemas/batches.py` ✅, upload endpoint ✅ (`routes/batches.py`, services images/storage/queue), 39 tests passing. Worker ✅ written (`app/worker.py`: process_item, sweep, run) using cleanup ✅ + queue claim/ack/recover ✅; 11 worker tests ✅ (50 total). rembg model = `settings.rembg_model` (isnet-general-use, by experiment). Claude step next. 24 tests passing.*
 
 ---
 
@@ -28,7 +28,7 @@ flowchart LR
         OWN["get_item_for_user()<br/>owner check via batches join"]
     end
 
-    subgraph WORKER["Worker 🔜 (app/worker.py)"]
+    subgraph WORKER["Worker ✅ (app/worker.py)"]
         CLAIM["claim item<br/>BLMOVE → processing list"]
         CLEAN["clean_image()<br/>rembg + white 2048px canvas"]
         LLM["describe_item()<br/>Claude → validated JSON"]
@@ -164,9 +164,9 @@ flowchart LR
 | PostgreSQL `users` | `POST /auth/register` ✅ | login, `get_current_user` ✅ | ❌ |
 | PostgreSQL `batches` | `POST /batches` ✅ | `GET /batches`, `GET /batches/{id}` ✅, quota 🔜 | ❌ |
 | PostgreSQL `items` | `POST /batches` ✅, worker 🔜, `PATCH /items` 🔜 | `GET /batches/{id}` ✅, worker 🔜 | ❌ |
-| Redis queue `catalog:queue` | `POST /batches`, `/retry` 🔜 via `JobQueue.push()` ✅ (IDs only, LPUSH) | worker 🔜 (BLMOVE right → FIFO) | ❌ |
+| Redis queue `catalog:queue` (+ `:processing`) | `POST /batches` ✅, sweep ✅, `/retry` 🔜 via `JobQueue.push()` | worker ✅ `claim` (BLMOVE) → `ack` (LREM); `recover_orphans` at start | ❌ |
 | `storage/originals/` | `POST /batches` 🔜 via `save_original()` ✅ (random name, temp+rename) | worker 🔜, image route 🔜 | ❌ |
-| `storage/clean/` | worker 🔜 | image route, zip export 🔜 | ❌ |
+| `storage/clean/` | worker ✅ via `save_clean()` | image route, zip export 🔜 | ❌ |
 | `alembic/versions/*.py` | `alembic revision --autogenerate`, then reviewed by hand ✅ | `alembic upgrade head` → creates/changes tables | ✅ |
 | `docs/SYSTEM_DESIGN.md` | design sessions ✅ | you, interviewers | ✅ |
 | `docs/FLOW.md` | updated with every code change ✅ | you, before reading code | ✅ |
