@@ -13,7 +13,7 @@ Online sellers spend hours on every new product line: removing photo backgrounds
 1. **Log in** and drag-and-drop a batch of up to 50 product photos.
 2. For every photo, a background worker:
    - removes the background and centres the product on a clean **2048 px white canvas**
-   - sends the image to **Claude** and gets back validated catalog data: **title, description, category** (women / men / kids / baby), **colours, tags**
+   - sends the image to an **AI vision model** (local **Ollama**, free, or **Claude**: one setting) and gets back validated catalog data: **title, description, category** (women / men / kids / baby), **colours, tags**
 3. Watch **live progress** per photo: queued → processing → done / needs review / failed.
 4. **Review and edit** anything the AI got wrong. Your edits are never overwritten.
 5. **Export** the catalog as CSV and download the clean images as a zip.
@@ -44,7 +44,7 @@ flowchart LR
     Q --> W[Worker]
     W --> R[rembg<br/>background removal]
     R --> P[Pillow<br/>white 2048px canvas]
-    P --> C[Claude API<br/>structured output]
+    P --> C[AI: Ollama or Claude<br/>structured output]
     W --> DB
 ```
 
@@ -56,7 +56,7 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 |---|---|
 | Backend | Python, FastAPI, Pydantic, SQLAlchemy, Alembic |
 | Data | PostgreSQL, Redis (job queue) |
-| AI | Claude API (vision + structured outputs), rembg (background removal), Pillow |
+| AI | Pluggable vision model: Ollama (local, free) or Claude API, both with structured outputs · rembg `isnet-general-use` (background removal, chosen by experiment) · Pillow |
 | Frontend | React, Vite, Tailwind CSS |
 | Auth | JWT (OAuth2 password flow), bcrypt |
 | Quality | pytest scenario tests, GitHub Actions CI |
@@ -70,13 +70,13 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 - [x] Register / login / JWT + owner-scoped access
 - [x] Upload endpoint: file validation, idempotency, safe file storage
 - [x] Image cleanup: background removal + white canvas
-- [ ] Claude structured-output call
+- [x] AI structured-output call (pluggable: Ollama local / Claude)
 - [x] Redis queue + worker + retry policy
 - [ ] Real-user scenario tests
 - [ ] GitHub Actions CI (tests on every push)
 - [ ] CSV + zip export
 - [ ] React frontend
-- [ ] Evaluation: Claude Haiku 5.5 vs Claude Opus 5.5 on 30 labelled photos
+- [ ] Evaluation: local Ollama model vs Claude on 30 labelled photos
 - [ ] Deployment + demo
 
 ## Design documents

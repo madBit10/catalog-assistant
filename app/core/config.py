@@ -1,4 +1,6 @@
-from pydantic import Field
+from typing import Literal
+
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -26,5 +28,28 @@ class Settings(BaseSettings):
     # Concept: CONFIG OVER CODE. Switching models = edit .env, no code change.
     # Example: REMBG_MODEL=birefnet-general-lite in .env -> cleaner, ~6x slower
     rembg_model: str = "isnet-general-use"
+
+    # --- AI provider (pluggable) ---
+    # Concept: PLUGGABLE PROVIDER. One setting picks who describes the photo.
+    # Example: AI_PROVIDER=ollama (free, local) for daily work,
+    #          AI_PROVIDER=claude for the evaluation and demo.
+    ai_provider: Literal["ollama", "claude"] = "ollama"
+
+    # Ollama: runs on this Mac, no key, no cost
+    ollama_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen2.5vl:7b"
+
+    # Claude: only needed when ai_provider = "claude"
+    anthropic_api_key: str | None = None
+    claude_model: str = "claude-haiku-5-5"   # compared with claude-opus-5-5 at evaluation
+    claude_max_retries: int = 4              # the SDK retries 429/5xx itself, with backoff
+
+    # Concept: CROSS-FIELD VALIDATION. The key is optional in general, but
+    # REQUIRED when Claude is chosen, so the app fails at startup, not on photo 1.
+    @model_validator(mode="after")
+    def claude_needs_a_key(self):
+        if self.ai_provider == "claude" and not self.anthropic_api_key:
+            raise ValueError("AI_PROVIDER=claude needs ANTHROPIC_API_KEY in .env")
+        return self
 
 settings = Settings()

@@ -33,8 +33,10 @@ python-multipart==0.0.32
 # Lets Pydantic's EmailStr reject invalid emails at signup
 email-validator==2.3.0
 
-# AI: Claude API
+# AI (pluggable, AI_PROVIDER): Claude via the official SDK...
 anthropic==2.3.0
+# ...or a local Ollama server, called over HTTP with httpx (also powers FastAPI's TestClient)
+httpx==0.28.1
 
 # Image processing
 pillow==13.0.0
@@ -43,6 +45,5 @@ pillow==13.0.0
 rembg[cpu]==2.0.86
 onnxruntime==1.31.0
 
-# Tests (httpx powers FastAPI's TestClient)
+# Tests
 pytest==9.2.0
-httpx==0.28.1
