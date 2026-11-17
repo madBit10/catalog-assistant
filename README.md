@@ -72,9 +72,9 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 - [x] Image cleanup: background removal + white canvas
 - [x] AI structured-output call (pluggable: Ollama local / Claude)
 - [x] Redis queue + worker + retry policy
-- [ ] Real-user scenario tests
+- [x] Real-user scenario tests (89 tests: auth, upload, worker, AI, review, export)
 - [ ] GitHub Actions CI (tests on every push)
-- [ ] CSV + zip export
+- [x] CSV + zip export
 - [ ] React frontend
 - [ ] Evaluation: local Ollama model vs Claude on 30 labelled photos
 - [ ] Deployment + demo

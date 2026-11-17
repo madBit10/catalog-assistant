@@ -170,3 +170,16 @@ def test_progress_is_computed_from_item_statuses(client, db):
     assert (progress["total"], progress["done"], progress["failed"], progress["queued"]) == (3, 1, 1, 1)
     # Same numbers on the list page
     assert client.get("/batches", headers=headers).json()[0]["progress"] == progress
+
+
+def test_photos_keep_upload_order_everywhere(client, db):
+    # A seller picks 5 photos in a deliberate order; list, CSV and zip must all keep it
+    headers = register_and_login(client)
+    names = [f"look-{i}.jpg" for i in range(5)]
+    body = client.post("/batches", files=[photo(n) for n in names],
+                       headers={**headers, "Idempotency-Key": "order"}).json()
+    assert [i["original_filename"] for i in body["items"]] == names            # upload response
+    again = client.get(f"/batches/{body['id']}", headers=headers).json()
+    assert [i["original_filename"] for i in again["items"]] == names           # batch page
+    csv_text = client.get(f"/batches/{body['id']}/export.csv", headers=headers).content.decode("utf-8-sig")
+    assert [line.split(",")[1] for line in csv_text.splitlines()[1:]] == names  # CSV rows

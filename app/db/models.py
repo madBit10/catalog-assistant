@@ -120,6 +120,11 @@ class Item(Base):
         ForeignKey("batches.id", ondelete="CASCADE"),
         index=True
     )
+    # Upload order inside the batch: 0 = first photo the user picked, 1 = second...
+    # Concept: STORE THE ORDER YOU NEED. A DB never promises row order unless you
+    # ORDER BY something; created_at ties for one upload (same transaction).
+    # Example: upload [p1.jpg, p2.jpg, p3.jpg] -> positions 0, 1, 2 -> shown in that order
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
 
     # --- Files ---
     # What the user called the file. Display only, never used as a path.
