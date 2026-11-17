@@ -1,0 +1,3 @@
+/* Concept: Tailwind v4 needs just this import; styles come from class names
+   in the components (e.g. className="rounded-lg bg-white p-4") */
+@import "tailwindcss";
