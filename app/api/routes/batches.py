@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.db.database import get_db
 from app.db.models import Batch, Item, User
 from app.schemas.batches import BatchOut, BatchSummary, Progress, RejectedFile
+from app.services.export import build_csv, build_zip
 from app.services.images import InvalidImage, validate_image
 from app.services.ownership import get_batch_for_user
 from app.services.queue import JobQueue, get_queue
@@ -54,7 +55,8 @@ def _batch_out(db: Session, batch: Batch, rejected: list[RejectedFile] | None = 
           "items": [{...shirt.jpg...}, {...dress.png...}],
           "rejected": [{"filename": "cv.pdf", "reason": "This file isn't a valid image..."}]}
     """
-    items = db.scalars(select(Item).where(Item.batch_id == batch.id).order_by(Item.created_at)).all()
+    # Concept: ORDER BY what you mean. position = upload order, set explicitly
+    items = db.scalars(select(Item).where(Item.batch_id == batch.id).order_by(Item.position)).all()
     return BatchOut(
         id=batch.id,
         created_at=batch.created_at,
@@ -140,7 +142,9 @@ def upload_batch(
 
     # 4. Batch + items in ONE transaction: all saved, or nothing
     batch = Batch(user_id=user.id, idempotency_key=idempotency_key)
-    items = [Item(original_filename=n, stored_path=p) for n, p in saved]
+    # position = the order the user picked the files (rejected files are skipped)
+    # Example: [shirt.jpg, cv.pdf (rejected), dress.png] -> shirt 0, dress 1
+    items = [Item(original_filename=n, stored_path=p, position=i) for i, (n, p) in enumerate(saved)]
     try:
         db.add(batch)
         db.flush()                      # sends the INSERT, so batch.id is usable; not committed yet
@@ -200,3 +204,50 @@ def get_batch(batch_id: uuid.UUID, user: User = Depends(get_current_user), db: S
     if batch is None:
         raise HTTPException(404, "Batch not found.")
     return _batch_out(db, batch)
+
+
+def _batch_items(db: Session, batch: Batch) -> list[Item]:
+    """Why: both exports need the batch's items in the SAME order every time
+    (upload order), so file numbers match between the CSV and the zip."""
+    # Same order as _batch_out: CSV and zip number photos identically, in upload order
+    return list(db.scalars(select(Item).where(Item.batch_id == batch.id).order_by(Item.position)).all())
+
+
+def _download(content: bytes, media_type: str, filename: str) -> Response:
+    """Why: tell the browser "save this as a file" instead of showing it.
+    Concept: Content-Disposition: attachment = download, with this file name."""
+    return Response(content=content, media_type=media_type,
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/{batch_id}/export.csv")
+def export_csv(batch_id: uuid.UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Why: the seller's catalog as a spreadsheet.
+
+    Examples:
+      Alice's batch          -> catalog-3f9c1a2b.csv (one row per photo, any status)
+      Bob asks for it        -> 404 "Batch not found."
+    """
+    batch = get_batch_for_user(db, batch_id, user)
+    if batch is None:
+        raise HTTPException(404, "Batch not found.")
+    return _download(build_csv(_batch_items(db, batch)), "text/csv; charset=utf-8",
+                     f"catalog-{str(batch.id)[:8]}.csv")
+
+
+@router.get("/{batch_id}/images.zip")
+def export_zip(batch_id: uuid.UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Why: all clean white-background images in one download, named like the CSV.
+
+    Examples:
+      3 photos done          -> images-3f9c1a2b.zip with 01-..., 02-..., 03-...
+      nothing finished yet   -> 404 "No finished images yet."
+      Bob asks for it        -> 404 "Batch not found."
+    """
+    batch = get_batch_for_user(db, batch_id, user)
+    if batch is None:
+        raise HTTPException(404, "Batch not found.")
+    items = _batch_items(db, batch)
+    if not any(i.clean_path for i in items):
+        raise HTTPException(404, "No finished images yet.")
+    return _download(build_zip(items), "application/zip", f"images-{str(batch.id)[:8]}.zip")
