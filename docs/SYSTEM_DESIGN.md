@@ -88,7 +88,7 @@ flowchart LR
 | `title`, `description`, `category`, `colours[]`, `tags[]` | AI output (PostgreSQL arrays for lists) |
 | `is_product` | AI's answer to "is this actually clothing?" → drives `needs_review` |
 | `edited_fields[]` | Fields the human changed; **the AI never overwrites them** (Decision Q3) |
-| `model`, `input_tokens`, `output_tokens` | Which model ran and what it cost (Haiku vs Opus comparison) |
+| `model`, `input_tokens`, `output_tokens` | Which model ran and what it cost (basis for any future model comparison) |
 | `created_at`, `updated_at` | Ordering, debugging |
 
 **Indexes:** `items(batch_id)` (progress counts + owner joins) · `batches(user_id, created_at)` (my batches, quota) · unique `batches(user_id, idempotency_key)`.
@@ -115,7 +115,7 @@ stateDiagram-v2
 | Q1 | Progress counters: store or compute? | **Compute** (`COUNT(*) … GROUP BY status`, indexed) | One **source of truth**; stored counters drift on crashes, retries and concurrent workers. Fast enough by the numbers above | Stored `done_count` columns: needs same-transaction updates + extra retry tests; premature optimisation |
 | Q2 | Owner check on items | **Join through `batches`**, no `user_id` on items; one helper `get_item_for_user(item_id, user_id)` used by every endpoint | The owner is stored **once**; a duplicated `user_id` could disagree with its batch → security hole | `user_id` on items: simpler queries, but two copies of an ownership fact |
 | Q3 | Protecting human edits | **Per field**: `edited_fields` list; AI skips listed fields | A seller who fixes one typo still wants the AI to refresh tags; ~3 lines of logic | One `user_edited` flag: freezes the whole item after any edit |
-| Q4 | Which model? | **Claude Haiku 5.5** for the build; **compare with Opus 5.5** on the evaluation set | Near-free for development; the comparison is a measured README result | Opus only: better text, ~20–40× the cost for every dev run |
+| Q4 | Which model? | **Pluggable** (`AI_PROVIDER`): local **Ollama** `qwen2.5vl:7b` by default (free), **Claude** optional *(revised 2026-11-16: the Claude API isn't free)* | Free development; switching needs no code change | Claude only: paid for every dev run |
 | Q5 | Batch API? | **No**, normal calls from the worker | Batch API (50% off) processes asynchronously, which breaks live progress | Batch API, kept as a scaling note |
 | Q6 | Progress updates | **Polling every 2 s** | Simple, reliable | WebSockets: slicker, much more complex |
 
@@ -211,11 +211,10 @@ Tests are written as **real-user scenarios**, run against **real bad files** in 
 
 ---
 
-## 7. Evaluation plan (end of build)
-- **Test set:** 30 hand-labelled photos (true category + main colour), including hard cases (kids' vs adult sizing, patterns, multi-item photos, non-clothing).
-- **Metrics:** category accuracy, main-colour accuracy, `needs_review` rate, cost per photo, seconds per photo.
-- **Comparison:** Haiku 5.5 vs Opus 5.5 on the same 30 photos → a results table in the README.
-- **Failure write-up:** every wrong answer listed with a likely reason.
+## 7. Evaluation (deferred, 2026-11-17)
+A formal evaluation (labelled photos, accuracy per model) was **dropped from v1** by decision.
+Problems seen in real runs are logged in `experiments/ai_observations.md` (the questions an evaluation would measure),
+and the background-removal model was chosen by experiment (`experiments/2026-11-14_rembg_models/`). See §10.
 
 ## 8. Risks
 | Risk | Mitigation |
@@ -235,8 +234,8 @@ Tests are written as **real-user scenarios**, run against **real bad files** in 
 | Thu 11/12 | Claude structured-output call + fake Claude client for tests | 🔜 |
 | Fri 11/13 | `PATCH /items`, `/retry`, image route · CSV + zip export | 🔜 |
 | Sat 11/14 – Sun 11/15 | React frontend: login, upload, live progress, review + edit | 🔜 |
-| Mon 11/16 | Evaluation (Haiku vs Opus on 30 labelled photos) | 🔜 |
+| Mon 11/16 | Evaluation | ❌ dropped (decision 2026-11-17) |
 | Tue 11/17 | Deploy · README + demo GIF | 🔜 |
 
 ## 10. Next steps (after v1)
-S3 storage · store integration (Shopify CSV format / API) · WebSockets for live updates · Batch API for large overnight batches · multiple images per product (side/back) · per-user brand-voice settings for descriptions.
+Formal evaluation (labelled photos: Ollama vs Claude accuracy, cost, speed) · S3 storage · store integration (Shopify CSV format / API) · WebSockets for live updates · Batch API for large overnight batches · multiple images per product (side/back) · per-user brand-voice settings for descriptions.
