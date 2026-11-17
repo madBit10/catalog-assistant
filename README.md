@@ -75,7 +75,7 @@ The API only **saves and enqueues** (about 1 second per upload); the worker does
 - [x] Real-user scenario tests (89 tests: auth, upload, worker, AI, review, export)
 - [ ] GitHub Actions CI (tests on every push)
 - [x] CSV + zip export
-- [ ] React frontend
+- [x] React frontend (login, drag-and-drop upload, live progress, review + edit, retry, CSV/zip download)
 - [ ] Evaluation: local Ollama model vs Claude on 30 labelled photos
 - [ ] Deployment + demo
 
@@ -97,6 +97,7 @@ docker compose up -d        # PostgreSQL + Redis
 alembic upgrade head        # create the database tables
 uvicorn app.main:app --reload   # API at http://127.0.0.1:8000/docs
 python -m app.worker        # in a 2nd terminal: processes uploaded photos
+cd frontend && npm install && npm run dev   # 3rd terminal: http://localhost:5173
 ```
 
 Full setup instructions will be added as the application is built.

@@ -8,7 +8,7 @@ Read this before reading the code. It answers:
 Status: ✅ **exists** · 🔜 **planned** (designed in `SYSTEM_DESIGN.md`, not written yet).
 Updated with every code change. If a diagram and the code disagree, the code wins and this file gets fixed.
 
-*Last updated: 2026-11-09: auth ✅; upload in progress: `services/images.py` (validate_image) ✅ and `services/storage.py` ✅, `services/queue.py` ✅, `schemas/batches.py` ✅, upload endpoint ✅ (`routes/batches.py`, services images/storage/queue), 39 tests passing. Worker ✅ written (`app/worker.py`: process_item, sweep, run) using cleanup ✅ + queue claim/ack/recover ✅; 11 worker tests ✅ (50 total). rembg model = `settings.rembg_model` (isnet-general-use, by experiment). AI layer ✅ `services/ai.py` (Ollama default, Claude via AI_PROVIDER); worker calls `ai.describe()` after cleanup ✅ (edited_fields respected); AI layer fully tested ✅ (67 tests total). Review routes ✅ `routes/items.py` (PATCH, retry, image) wired into main.py; 13 item tests ✅; export ✅ (`services/export.py`, `/export.csv`, `/images.zip`) + 8 tests; upload order via `items.position` (migration 2). 89 tests. **Backend complete** → frontend next. 24 tests passing.*
+*Last updated: 2026-11-09: auth ✅; upload in progress: `services/images.py` (validate_image) ✅ and `services/storage.py` ✅, `services/queue.py` ✅, `schemas/batches.py` ✅, upload endpoint ✅ (`routes/batches.py`, services images/storage/queue), 39 tests passing. Worker ✅ written (`app/worker.py`: process_item, sweep, run) using cleanup ✅ + queue claim/ack/recover ✅; 11 worker tests ✅ (50 total). rembg model = `settings.rembg_model` (isnet-general-use, by experiment). AI layer ✅ `services/ai.py` (Ollama default, Claude via AI_PROVIDER); worker calls `ai.describe()` after cleanup ✅ (edited_fields respected); AI layer fully tested ✅ (67 tests total). Review routes ✅ `routes/items.py` (PATCH, retry, image) wired into main.py; 13 item tests ✅; export ✅ (`services/export.py`, `/export.csv`, `/images.zip`) + 8 tests; upload order via `items.position` (migration 2). 89 tests. **Backend complete.** Frontend ✅ `frontend/`: api.ts (one client, token, blob images/downloads), auth.tsx (context), Login, Batches + Upload (idempotency key per selection), BatchDetail (2 s polling while busy) + ItemCard (PATCH only changed fields, Retry). Dev proxy → :8000. 24 tests passing.*
 
 ---
 
@@ -16,7 +16,7 @@ Updated with every code change. If a diagram and the code disagree, the code win
 
 ```mermaid
 flowchart LR
-    subgraph CLIENT["Browser 🔜"]
+    subgraph CLIENT["Browser ✅ (frontend/: React + Vite + Tailwind)"]
         UI["React + Vite + Tailwind<br/>login · upload · progress · review · export"]
     end
 
