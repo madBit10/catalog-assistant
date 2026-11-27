@@ -9,3 +9,7 @@ docs/INTERVIEW_PREP.md
 # Experiment outputs contain personal photos: keep local, commit only scripts + results.md
 experiments/**/outputs/
 experiments/**/grid.jpg
+
+# test results and report
+test-results/
+playwright-report/
